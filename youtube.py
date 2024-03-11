@@ -45,16 +45,6 @@ def get_channel_info(channel_id):
     
         return data
 
-#4 degrees of freedom       'UCPyrIv-3woyRXZozX_8UjAQ',   
-#Vanilla Chords             'UCtGrdfezQuXjdBek3Zv8bdg',  
-#Marty Music                'UCmnlTWVJysjWPFiZhQ5uudg',
-#Kumar Shyam                'UCW3VuTWsyPWvT8fbyGrVpAQ',   
-#Wanderlust ANuj            'UCRBHXgLP8DbAAHfOYN_J4nw',   
-#Finance With Sharan        'UCwVEhEzsjLym_u1he4XWFkg',   
-#BlackSheep Productions     'UCoC4TYHD1zDUYGmY59_5LCQ',   
-#Specxy Panda Bakes         'UCSXa6jwF7pvL-qVdS1OnytA', 
-#Gustavo carmo              'UCMwu5UL4nfp7upkIdr0dtWg'    
-
 
 # getting videos ids
 

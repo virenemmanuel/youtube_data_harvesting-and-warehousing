@@ -257,10 +257,11 @@ def playlist_table():
 
     try:
         create_query = '''create table if not exists playlists(PlaylistId varchar(100) primary key,
-                              Title varchar(80),
-                              ChannelId varchar(100),
-                              ChannelName varchar(100),
-                              VideoCount int) '''
+                                                                Title varchar(80),
+                                                                ChannelId varchar(100),
+                                                                ChannelName varchar(100),
+                                                                PublishedAt,
+                                                                VideoCount int) '''
         cursor.execute(create_query)
         mydb.commit()
 
@@ -311,32 +312,27 @@ def videos_table():
         user="postgres",
         password="roomno13",
         database="youtube_data",
-        port="5432"
-    )
+        port="5432")
+    
     cursor = mydb.cursor()
 
     drop_query = "DROP TABLE IF EXISTS videos"
     cursor.execute(drop_query)
     mydb.commit()
 
-    create_query = '''
-        CREATE TABLE IF NOT EXISTS Videos (
-            Channel_Name VARCHAR(150),
-            Channel_Id VARCHAR(100),
-            Video_Id VARCHAR(80) PRIMARY KEY,
-            Title VARCHAR(150),
-            Tags TEXT,
-            Thumbnail VARCHAR(250),
-            Description VARCHAR(250),
-            Duration INTERVAL,
-            Views BIGINT,
-            Likes BIGINT,
-            Comments INT,
-            Favorite_Count INT,
-            Definition VARCHAR(10),
-            Caption_Status VARCHAR(50)
-        )
-    '''
+    create_query = ''' CREATE TABLE IF NOT EXISTS Videos ( Channel_Name VARCHAR(150),
+                                                           Channel_Id VARCHAR(100),
+                                                           Video_Id VARCHAR(80) PRIMARY KEY,
+                                                           Title VARCHAR(150),
+                                                           Thumbnail VARCHAR(250),
+                                                           Description VARCHAR(250),
+                                                           Published_Date,
+                                                           Duration INTERVAL,
+                                                           Views BIGINT,
+                                                           Likes BIGINT,
+                                                           Comments INT,
+                                                           Favorite_Count INT,
+                                                                )'''
     cursor.execute(create_query)
     mydb.commit()
 
@@ -357,7 +353,6 @@ def videos_table():
                     Channel_Id,
                     Video_Id,
                     Title,
-                    Tags,
                     Thumbnail,
                     Description,
                     Published_Date,
@@ -366,8 +361,8 @@ def videos_table():
                     Likes,
                     Comments,
                     Favorite_Count,
-                    Definition,
-                    Caption_Status
+                   
+                  
                 ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             '''
             values = (
@@ -375,7 +370,6 @@ def videos_table():
                 row['Channel_Id'],
                 row['Video_Id'],
                 row['Title'],
-                row['Tags'],
                 row['Thumbnail'],
                 row['Description'],
                 row['Published_Date'],
@@ -384,8 +378,8 @@ def videos_table():
                 row['Likes'],
                 row['Comments'],
                 row['Favorite_Count'],
-                row['Definition'],
-                row['Caption_Status']
+                
+                
             )
             try:
                 cursor.execute(insert_query, values)
@@ -413,14 +407,14 @@ def comment_table():
     mydb.commit()
 
     try:
-        create_query = '''CREATE TABLE IF NOT EXISTS comments(
-            Comment_Id VARCHAR(100) PRIMARY KEY,
-            Video_Id VARCHAR(80),
-            Comment_Text TEXT,
-            Comment_Author VARCHAR(150),
-            Comment_Published
-        )'''
+        create_query = '''CREATE TABLE IF NOT EXISTS comments( Comment_Id VARCHAR(100) PRIMARY KEY,
+                                                               Video_Id VARCHAR(80),
+                                                               Comment_Text TEXT,
+                                                               Comment_Author VARCHAR(150),
+                                                               Comment_Published
+                                                                )'''
         cursor.execute(create_query)
+        
         mydb.commit()
 
     except Exception as e:
@@ -459,7 +453,7 @@ def comment_table():
     mydb.close()
 
 # Call the function to create the table and insert data
-comment_table()
+
 
 
 

@@ -7,6 +7,7 @@ from ipykernel import kernelapp as app
 
 
 
+
 # Api key details 
 # creating a function for Api_details
 
@@ -326,7 +327,7 @@ def videos_table():
                                                            Title VARCHAR(150),
                                                            Thumbnail VARCHAR(250),
                                                            Description VARCHAR(250),
-                                                           Published_Date,
+                                                           Published_Date TIMESTAMP,
                                                            Duration INTERVAL,
                                                            Views BIGINT,
                                                            Likes BIGINT,
@@ -411,7 +412,7 @@ def comment_table():
                                                                Video_Id VARCHAR(80),
                                                                Comment_Text TEXT,
                                                                Comment_Author VARCHAR(150),
-                                                               Comment_Published
+                                                               Comment_Published timestamp
                                                                 )'''
         cursor.execute(create_query)
         
@@ -667,7 +668,10 @@ elif question == '10.  Which videos have the highest number of comments, and wha
     t10=cursor.fetchall()
     st.write(pd.DataFrame(t10, columns=['Video Title', 'Channel Name', 'NO Of Comments']))
 
-        
+
+cursor.close()
+mydb.close()
+
 
 
 

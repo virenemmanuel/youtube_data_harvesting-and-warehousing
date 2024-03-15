@@ -1,16 +1,19 @@
 from googleapiclient.discovery import build
+import googleapiclient.discovery
+import json
 import pymongo
 import psycopg2
 import pandas as pd
+import numpy as np
 import streamlit as st
-from ipykernel import kernelapp as app
-from sqlalchemy import Column, Integer, String, TIMESTAMP
+from datetime import datetime
 import re
-import json
+from sqlalchemy import Column, Integer, String, TIMESTAMP
+from cryptography.x509 import load_der_x509_certificate
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
 from ipykernel import kernelapp as app
-from cryptography.x509 import load_der_x509_certificate
+
 
 
 
@@ -94,14 +97,29 @@ def get_video_info(Video_ids):
                             Channel_Id = item['snippet']['channelId'],
                             Video_Id = item['id'],
                             Title = item['snippet']['title'],
+                            Thumbnail = item['snippet']['thumbnails']['default']['url'],
                             Description = item['snippet']['description'],
                             Published_date = item['snippet']['publishedAt'],
                             Views = item['statistics']['viewCount'],
                             likes = item['statistics']['likeCount'],
                             Comments = item.get('CommentCount'),                                          
-                            Duration = item['contentDetails']['duration']
-                                )
-                video_data.append(data)
+                            Duration = item.get('duration'))
+                
+                
+        # function to convert duration
+        def convert_duration(duration):
+            regex = r'PT(\d+H)?(\d+M)?(\d+S)?'
+            match = re.match(regex, duration)
+            if not match:
+                return '00:00:00'
+            hours, minutes, seconds = match.groups()
+            hours = int(hours[:-1]) if hours else 0
+            minutes = int(minutes[:-1]) if minutes else 0
+            seconds = int(seconds[:-1]) if seconds else 0
+            total_seconds = hours * 3600 + minutes * 60 + seconds
+            return '{:02d}:{:02d}:{:02d}'.format(int(total_seconds / 3600), int((total_seconds % 3600) / 60), int(total_seconds % 60))
+                                
+        video_data.append(data)
         return video_data
                             
     
@@ -119,8 +137,7 @@ def get_comment_info(Video_ids):
             response = request.execute()
             
             for i in range(len(response['items'])):
-                    data =dict(
-                                Comment_Id = response['items'][0]['snippet']['topLevelComment']['id'],
+                    data =dict( Comment_Id = response['items'][0]['snippet']['topLevelComment']['id'],
                                 Video_Id = response['items'][0]['snippet']['topLevelComment']['snippet']['videoId'],
                                 Comment_text = response['items'][0]['snippet']['topLevelComment']['snippet']['textDisplay'],
                                 Comment_author =response['items'][0]['snippet']['topLevelComment']['snippet'],
@@ -139,12 +156,11 @@ def get_playlist_info(channel_id):
         next_page_token = None
         All_data = []
         while True:
-                request = youtube.playlists().list(
-                        part = "snippet,contentDetails",
-                        channelId = channel_id,
-                        maxResults = 50,
-                        pageToken = next_page_token
-                    )
+                request = youtube.playlists().list(part = "snippet,contentDetails",
+                                                   channelId = channel_id,
+                                                   maxResults = 50,
+                                                   pageToken = next_page_token
+                                                   )
 
                 response = request.execute()
 
@@ -205,12 +221,12 @@ def channels_table():
 
     try:
         create_query = '''create table if not exists channels(Channel_Name varchar(100),
-                                                            Channel_Id varchar(80) primary key,
-                                                            Subscribers_Count bigint,
-                                                            Views bigint,                     
-                                                            Total_videos int,
-                                                            Channel_Discription text,
-                                                            Playlist_Id varchar(80))'''
+                                                              Channel_Id varchar(80) primary key,
+                                                              Subscribers_Count bigint,
+                                                              Views bigint,                     
+                                                              Total_videos int,
+                                                              Channel_Discription text,
+                                                              Playlist_Id varchar(80))'''
         
         cursor.execute(create_query)
         mydb.commit()
@@ -228,22 +244,22 @@ def channels_table():
 
     for index, row in df.iterrows():
         insert_query = '''INSERT into channels(Channel_Name,
-                                            Channel_Id,
-                                            Subscription_Count,
-                                            Views,
-                                            Total_Videos,
-                                            Channel_Discription,
-                                            Playlist_Id)
-                                        VALUES(%s,%s,%s,%s,%s,%s,%s)'''
+                                               Channel_Id,
+                                               Subscription_Count,
+                                               Views,
+                                               Total_Videos,
+                                               Channel_Discription,
+                                               Playlist_Id)
+                                               VALUES(%s,%s,%s,%s,%s,%s,%s)'''
         
-        values = (
-                row['Channels_Name'],
-                row['Channel_Id'],
-                row['Subscription_Count'],
-                row['Views'],
-                row['Total_Videos'],
-                row['Channel_Description'],
-                row['Playlist_Id'])
+        values = (row['Channels_Name'],
+                  row['Channel_Id'],
+                  row['Subscription_Count'],
+                  row['Views'],
+                  row['Total_Videos'],
+                  row['Channel_Description'],
+                  row['Playlist_Id']
+                  )
         try:
             cursor.execute(insert_query,values)
             mydb.commit()
@@ -263,7 +279,7 @@ def playlist_table():
     mydb.commit()
 
     try:
-        create_query = '''create table if not exists playlists(PlaylistId varchar(100) primary key,
+        create_query = '''create table if not exists playlists( PlaylistId varchar(100) primary key,
                                                                 Title varchar(80),
                                                                 ChannelId varchar(100),
                                                                 ChannelName varchar(100),
@@ -284,20 +300,20 @@ def playlist_table():
     df = pd.DataFrame(pl_list)
 
     for index,row in df.iterrows():
-        insert_query = '''INSERT into playlists(PlaylistId,
-                                                    Title,
-                                                    ChannelId,
-                                                    ChannelName,
-                                                    PublishedAt,
-                                                    VideoCount)
-                                            VALUES(%s,%s,%s,%s,%s,%s)'''
-        values = (
-                row['PlaylistId'],
-                row['Title'],
-                row['ChannelId'],
-                row['ChannelName'],
-                row['published_at'],
-                row['VideoCount'])
+        insert_query = '''INSERT into playlists( PlaylistId,
+                                                 Title,
+                                                 ChannelId,
+                                                 ChannelName,
+                                                 PublishedAt,
+                                                 VideoCount)
+                                                 VALUES(%s,%s,%s,%s,%s,%s)'''
+        values = ( row['PlaylistId'],
+                   row['Title'],
+                   row['ChannelId'],
+                   row['ChannelName'],
+                   row['published_at'],
+                   row['VideoCount']
+                   )
 
         try:
             cursor.execute(insert_query, values)
@@ -406,21 +422,18 @@ def videos_table():
     mydb.commit()
 
     create_query = '''
-    CREATE TABLE IF NOT EXISTS videos (
-        Channel_Name VARCHAR(150),
-        Channel_id VARCHAR(100),
-        Video_id VARCHAR(80) PRIMARY KEY,
-        Title VARCHAR(150),
-        Thumbnail VARCHAR(250),    
-        Description_Date TIMESTAMP,
-        Published_Date  TIMESTAMP,
-        Views BIGINT,
-        Likes BIGINT,
-        Favorite_Count INT,
-        Comments INT,
-        Duration INTERVAL
-       
-    )'''
+    CREATE TABLE IF NOT EXISTS videos ( Channel_Name VARCHAR(150),
+                                        Channel_id VARCHAR(100),
+                                        Video_id VARCHAR(80) PRIMARY KEY,
+                                        Title VARCHAR(150),
+                                        Thumbnail VARCHAR(250),    
+                                        Description_Date TIMESTAMP,
+                                        Published_Date  TIMESTAMP,
+                                        Views BIGINT,
+                                        Likes BIGINT,
+                                        Favorite_Count INT,
+                                        Comments INT,
+                                        Duration INTERVAL)'''
     cursor.execute(create_query)
     mydb.commit()
 
@@ -432,7 +445,7 @@ def videos_table():
             vi_list.append(video_info)
 
     for video in vi_list:
-        insert_query = '''INSERT INTO videos (Channel_Name,
+        insert_query = '''INSERT INTO videos( Channel_Name,
                                               Channel_Id,
                                               Video_Id,
                                               Title,
@@ -447,21 +460,19 @@ def videos_table():
         VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         '''
 
-        values = (
-            video['Channel_Name'],
-            video['Channel_Id'],
-            video['Video_Id'],
-            video['Title'],
-            video.get('Thumbnail', ''),
-            video['Description'],
-            video.get('Published_Date', ''),           
-            video['Views'],
-            video.get('Likes', ''),           
-            video.get('Favorite_Count', ''),
-            video['Comments'],
-            video['Duration'],
-           
-        )
+        values = ( video['Channel_Name'],
+                   video['Channel_Id'],
+                   video['Video_Id'],
+                   video['Title'],
+                   video.get('Thumbnail', ''),
+                   video['Description'],
+                   video.get('Published_Date', ''),           
+                   video['Views'],
+                   video.get('Likes', ''),           
+                   video.get('Favorite_Count', ''),
+                   video['Comments'],
+                   video.get('Duration', ''),
+                  )
 
         try:
             cursor.execute(insert_query, values)
@@ -475,13 +486,12 @@ def videos_table():
 
 
 def comment_table():
-    mydb = psycopg2.connect(
-        host="localhost",
-        user="postgres",
-        password="roomno13",
-        database="youtube_data",
-        port="5432"
-    )
+    mydb = psycopg2.connect( host="localhost",
+                             user="postgres",
+                             password="roomno13",
+                             database="youtube_data",
+                             port="5432"
+                            )
     cursor = mydb.cursor()
 
     drop_query = "DROP TABLE IF EXISTS comments"
@@ -513,17 +523,15 @@ def comment_table():
     df3 = pd.DataFrame(com_list)
 
     for index, row in df3.iterrows():
-        insert_query = '''
-            INSERT INTO comments (Comment_Id, Video_Id, Comment_Text, Comment_Author, Comment_Published)
-            VALUES (%s, %s, %s, %s, %s)
-        '''
-        values = (
-            row.get('Comment_Id', ''),
-            row.get('Video_Id', ''),
-            row.get('Comment_Text', ''),
-            row.get('Comment_Author', ''),
-            row.get('Comment_Published', '')
-        )
+        insert_query = '''INSERT INTO comments (Comment_Id, Video_Id, Comment_Text, Comment_Author, Comment_Published)
+                          VALUES (%s, %s, %s, %s, %s)'''
+        
+        values = (row.get('Comment_Id', ''),
+                  row.get('Video_Id', ''),
+                  row.get('Comment_Text', ''),
+                  row.get('Comment_Author', ''),
+                  row.get('Comment_Published', '')
+                  )
         try:
             cursor.execute(insert_query, values)
             mydb.commit()
@@ -645,25 +653,23 @@ elif show_table == ":blue[comments]":
 
 # FOR SQL CONNECTION
 
-mydb = psycopg2.connect(host="localhost",
-                            user = "postgres",
-                            password = "roomno13",
-                            database = "youtube_data",
-                            port = "5432")
+mydb = psycopg2.connect( host="localhost",
+                         user = "postgres",
+                         password = "roomno13",
+                         database = "youtube_data",
+                         port = "5432")
 cursor = mydb.cursor()
 
-question = st.selectbox(
-    'Please Select your Question',
-    ('1. What are the names of all the videos and their corresponding channels?',
-    '2. Which channels have the most number of videos, and how many videos do they have?',
-    '3. What are the top 10 most viewed videos and their respective channels?',
-    '4. How many comments were made on each video, and what are their corresponding video names?',
-    '5. Which videos have the highest number of likes, and what are theircorresponding channel names?',
-    '6. What is the total number of likes and dislikes for each video, and what aretheir corresponding video names?',
-    '7. What is the total number of views for each channel, and what are their corresponding channel names?',
-    '8. What are the names of all the channels that have published videos in the year 2022?',
-    '9. What is the average duration of all videos in each channel, and what are their corresponding channel names?',
-    '10. Which videos have the highest number of comments, and what are their corresponding channel names?'))
+question = st.selectbox('Please Select your Question',( '1. What are the names of all the videos and their corresponding channels?',
+                                                        '2. Which channels have the most number of videos, and how many videos do they have?',
+                                                        '3. What are the top 10 most viewed videos and their respective channels?',
+                                                        '4. How many comments were made on each video, and what are their corresponding video names?',
+                                                        '5. Which videos have the highest number of likes, and what are theircorresponding channel names?',
+                                                        '6. What is the total number of likes and dislikes for each video, and what aretheir corresponding video names?',
+                                                        '7. What is the total number of views for each channel, and what are their corresponding channel names?',
+                                                        '8. What are the names of all the channels that have published videos in the year 2022?',
+                                                        '9. What is the average duration of all videos in each channel, and what are their corresponding channel names?',
+                                                        '10. Which videos have the highest number of comments, and what are their corresponding channel names?'))
 
 
 

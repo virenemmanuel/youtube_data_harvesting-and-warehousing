@@ -43,14 +43,14 @@ def get_channel_info(channel_id):
 
     channel_data = []
 
-    for i in response['items']:
-        data = {'Channel_Name' : i['snippet']['title'],
-                'Channel_Id': i['id'],
-                'Subscribers':i['statistics']['subscriberCount'],
-                'Views' :i['statistics']['viewCount'],
-                'Total_videos': i['statistics']['videoCount'],
-                'Channel_Discription':i['snippet'].get('description', ''),
-                'Playlist_Id ':i['contentDetails']['relatedPlaylists']['uploads']}
+    for item in response['items']:
+        data = {'Channel_Name' : item['snippet']['title'],
+                'Channel_Id': item['id'],
+                'Subscribers':item['statistics']['subscriberCount'],
+                'Views' :item['statistics']['viewCount'],
+                'Total_videos': item['statistics']['videoCount'],
+                'Channel_Discription':item['snippet'].get('description', ''),
+                'Playlist_Id ':item['contentDetails']['relatedPlaylists']['uploads']}
         channel_data.append(data)
     
         return data
@@ -103,13 +103,13 @@ def get_video_info(Video_ids):
                             Views = item['statistics']['viewCount'],
                             likes = item['statistics']['likeCount'],
                             Comments = item.get('CommentCount'),                                          
-                            Duration = item.get('duration'))
+                            Duration = item.get('contentDetails', {}).get('duration', 'Not Available'))
                 
                 
         # function to convert duration
-        def convert_duration(duration):
+        def convert_duration(Duration):
             regex = r'PT(\d+H)?(\d+M)?(\d+S)?'
-            match = re.match(regex, duration)
+            match = re.match(regex, Duration)
             if not match:
                 return '00:00:00'
             hours, minutes, seconds = match.groups()
@@ -433,7 +433,7 @@ def videos_table():
                                         Likes BIGINT,
                                         Favorite_Count INT,
                                         Comments INT,
-                                        Duration INTERVAL)'''
+                                        Duration VARCHAR(100))'''
     cursor.execute(create_query)
     mydb.commit()
 
@@ -471,7 +471,7 @@ def videos_table():
                    video.get('Likes', ''),           
                    video.get('Favorite_Count', ''),
                    video['Comments'],
-                   video.get('Duration', ''),
+                   video['Duration']
                   )
 
         try:

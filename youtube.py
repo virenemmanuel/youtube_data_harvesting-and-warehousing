@@ -98,8 +98,8 @@ def get_video_info(Video_ids):
                             Video_Id = item['id'],
                             Title = item['snippet']['title'],
                             Thumbnail = item['snippet']['thumbnails']['default']['url'],
-                            Description = item['snippet']['description'],
-                            Published_date = item['snippet']['publishedAt'],
+                            Video_Description = item['snippet']['description'],
+                            # Published_At = item['snippet'].get('publishedAt'),
                             Views = item['statistics']['viewCount'],
                             likes = item['statistics']['likeCount'],
                             Comments = item.get('CommentCount'),                                          
@@ -427,13 +427,12 @@ def videos_table():
                                         Video_id VARCHAR(80) PRIMARY KEY,
                                         Title VARCHAR(150),
                                         Thumbnail VARCHAR(250),    
-                                        Description_Date TIMESTAMP,
-                                        Published_Date  TIMESTAMP,
-                                        Views BIGINT,
+                                        Video_Description TEXT,
+                                        Views INT,
                                         Likes BIGINT,
                                         Favorite_Count INT,
-                                        Comments INT,
-                                        Duration VARCHAR(100))'''
+                                        Comments BIGINT,
+                                        Duration TIMESTAMP)'''
     cursor.execute(create_query)
     mydb.commit()
 
@@ -450,14 +449,13 @@ def videos_table():
                                               Video_Id,
                                               Title,
                                               Thumbnail,
-                                              Description,
-                                              Published_Date,            
+                                              Video_Description,                                                    
                                               Views,
                                               Likes,            
                                               Favorite_Count,
                                               Comments,
-                                              Duration,)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                                              Duration)
+        VALUES (%s, %s, %s, %s, %s, %s,%s, %s, %s, %s, %s)
         '''
 
         values = ( video['Channel_Name'],
@@ -465,13 +463,12 @@ def videos_table():
                    video['Video_Id'],
                    video['Title'],
                    video.get('Thumbnail', ''),
-                   video['Description'],
-                   video.get('Published_Date', ''),           
+                   video.get('Video_Description'),                         
                    video['Views'],
                    video.get('Likes', ''),           
                    video.get('Favorite_Count', ''),
                    video['Comments'],
-                   video['Duration']
+                   video.get('Duration', '')
                   )
 
         try:

@@ -463,10 +463,10 @@ def videos_table():
                    video['Video_Id'],
                    video['Title'],
                    video.get('Thumbnail', ''),
-                   video.get('Video_Description'),                         
+                   video.get('Video_Description', ''),                         
                    video['Views'],
-                   video.get('Likes', ''),           
-                   video.get('Favorite_Count', ''),
+                    int(video.get('Likes', 0)),
+                  int(video.get('Favorite_Count', 0)),
                    video['Comments'],
                    video.get('Duration', '')
                   )

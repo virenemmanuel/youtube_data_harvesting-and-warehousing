@@ -44,7 +44,7 @@ def get_channel_info(channel_id):
     channel_data = []
 
     for item in response['items']:
-        data = {'Channel_Name' : item['snippet']['title'],
+        data = {'Channel_Name': item['snippet']['title'],
                 'Channel_Id': item['id'],
                 'Subscribers':item['statistics']['subscriberCount'],
                 'Views' :item['statistics']['viewCount'],
@@ -338,22 +338,23 @@ def videos_table():
     cursor.execute(drop_query)
     mydb.commit()
 
-    create_query = '''
-    CREATE TABLE IF NOT EXISTS videos ( Channel_Name varchar(100),
-                                        Channel_Id varchar(100),
-                                        Video_Id varchar(30),
-                                        Title varchar(150),
-                                        Tags text,
-                                        Thumbnail varchar(200),
-                                        Description text,
-                                        Published_Date timestamp,
-                                        Duration interval,
-                                        Views bigint,
-                                        Comments int, 
-                                        likes bigint,
-                                        Favorite_Count int,
-                                        Definition varchar(10),
-                                        Caption_Status varchar(50) )'''
+    create_query = '''CREATE TABLE IF NOT EXISTS videos(Channel_Name varchar(100),
+                                                        Channel_Id varchar(100),
+                                                        Video_Id varchar(30),
+                                                        Title varchar(150),
+                                                        Tags text,
+                                                        Thumbnail varchar(200),
+                                                        Description text,
+                                                        Published_Date timestamp,
+                                                        Duration interval,
+                                                        Views bigint,
+                                                        Comments int, 
+                                                        likes bigint,
+                                                        Favorite_Count int,
+                                                        Definition varchar(10),
+                                                        Caption_Status varchar(50) 
+                                                        )'''
+    
     cursor.execute(create_query)
     mydb.commit()
 
@@ -361,11 +362,12 @@ def videos_table():
     db = client["Youtube_data"]
     coll1 = db["channel_details"]
     for vi_data in coll1.find({}, {"_id": 0, "video_information": 1}):
-        for video_info in vi_data["video_information"]:
-            vi_list.append(vi_data["video_information"])
+        for i in range(len(vi_data["video_information"])):
+            vi_list.append(vi_data["video_information"][i])
     df = pd.DataFrame(vi_list)
 
-    for index,row in df.iterrows():
+  
+    for index,row in df.iterrows():                
         insert_query = '''INSERT INTO videos( Channel_Name,
                                               Channel_Id,
                                               Video_Id,
@@ -381,8 +383,8 @@ def videos_table():
                                               Favorite_Count,
                                               Definition,
                                               Caption_Status)
-        VALUES (%s, %s, %s, %s, %s, %s,%s, %s, %s, %s, %s,%s, %s, %s, %s)
-        '''
+
+                            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)'''
 
         values = (row["Channel_Name"],
                   row["Channel_Id"],
@@ -398,12 +400,14 @@ def videos_table():
                   row["likes"],
                   row["Favorite_Count"],
                   row["Definition"],
-                  row["Caption_Status"])
-                  
+                  row["Caption_Status"],
+
+                  )
 
         try:
             cursor.execute(insert_query, values)
             mydb.commit()
+    
         except psycopg2.Error as e:
             st.write(f"Error inserting row: {e}")
 

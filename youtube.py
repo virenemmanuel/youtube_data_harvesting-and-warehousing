@@ -97,13 +97,17 @@ def get_video_info(Video_ids):
                             Channel_Id = item['snippet']['channelId'],
                             Video_Id = item['id'],
                             Title = item['snippet']['title'],
+                            Tags = item['snippet'].get('tags'),
                             Thumbnail = item['snippet']['thumbnails']['default']['url'],
-                            Video_Description = item['snippet']['description'],
-                            # Published_At = item['snippet'].get('publishedAt'),
-                            Views = item['statistics']['viewCount'],
-                            likes = item['statistics']['likeCount'],
-                            Comments = item.get('CommentCount'),                                          
-                            Duration = item.get('contentDetails', {}).get('duration', 'Not Available'))
+                            Description = item['snippet'].get('description'),
+                            Published_Date = item['snippet']['publishedAt'],
+                            Duration = item['contentDetails']['duration'],
+                            Views = item['statistics'].get('viewCount'),
+                            Comments = item['statistics'].get('CommentCount'), 
+                            likes = item['statistics'].get('likeCount'),
+                            Favorite_Count = item['statistics']['favoriteCount'],
+                            Definition = item['contentDetails']['definition'],
+                            Caption_Status = item['contentDetails']['caption'])
                 
                 
         # function to convert duration
@@ -321,94 +325,7 @@ def playlist_table():
         except:
             st.write("playlists values are already inserted")
             
-
-            
-
-# def videos_table():
-#     mydb = psycopg2.connect(
-#         host="localhost",
-#         user="postgres",
-#         password="roomno13",
-#         database="youtube_data",
-#         port="5432")
-    
-#     cursor = mydb.cursor()
-
-#     drop_query = "DROP TABLE IF EXISTS videos"
-#     cursor.execute(drop_query)
-#     mydb.commit()
-
-#     create_query = ''' CREATE TABLE IF NOT EXISTS Videos ( Channel_Name VARCHAR(150),
-#                                                            Channel_Id VARCHAR(100),
-#                                                            Video_Id VARCHAR(80) PRIMARY KEY,
-#                                                            Title VARCHAR(150),
-#                                                            Thumbnail VARCHAR(250),
-#                                                            Description VARCHAR(250),
-#                                                            Published_Date TIMESTAMP,
-#                                                            Duration INTERVAL,
-#                                                            Views BIGINT,
-#                                                            Likes BIGINT,
-#                                                            Comments INT,
-#                                                            Favorite_Count INT,
-#                                                                 )'''
-#     cursor.execute(create_query)
-#     mydb.commit()
-
-#     vi_list = []
-#     db = client["Youtube_data"]
-#     coll1 = db["channel_details"]
-#     for vi_data in coll1.find({}, {"_id": 0, "video_information": 1}):
-#         for i in range(len(vi_data["video_information"])):
-#             vi_list.append(vi_data["video_information"][i])
-#         df2 = pd.DataFrame(vi_list)
-
-        
-
-#         for index, row in df2.iterrows():
-#             insert_query = '''
-#                 INSERT INTO videos (
-#                     Channel_Name,
-#                     Channel_Id,
-#                     Video_Id,
-#                     Title,
-#                     Thumbnail,
-#                     Description,
-#                     Published_Date,
-#                     Duration,
-#                     Views,
-#                     Likes,
-#                     Comments,
-#                     Favorite_Count,
-                   
-                  
-#                 ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-#             '''
-#             values = (
-#                 row['Channel_Name'],
-#                 row['Channel_Id'],
-#                 row['Video_Id'],
-#                 row['Title'],
-#                 row['Thumbnail'],
-#                 row['Description'],
-#                 row['Published_Date'],
-#                 row['Duration'],
-#                 row['Views'],
-#                 row['Likes'],
-#                 row['Comments'],
-#                 row['Favorite_Count'],
-                
-                
-#             )
-#             try:
-#                 cursor.execute(insert_query, values)
-#                 mydb.commit()
-#             except psycopg2.Error as e:
-#                 print(f"Error inserting row: {e}")
-#                 mydb.rollback()
-#                 break
-#         else:
-#             print("Videos values already inserted in the table")
-
+           
 def videos_table():
     mydb = psycopg2.connect(host="localhost",
                             user="postgres",
@@ -422,17 +339,21 @@ def videos_table():
     mydb.commit()
 
     create_query = '''
-    CREATE TABLE IF NOT EXISTS videos ( Channel_Name VARCHAR(150),
-                                        Channel_id VARCHAR(100),
-                                        Video_id VARCHAR(80) PRIMARY KEY,
-                                        Title VARCHAR(150),
-                                        Thumbnail VARCHAR(250),    
-                                        Video_Description TEXT,
-                                        Views INT,
-                                        Likes BIGINT,
-                                        Favorite_Count INT,
-                                        Comments BIGINT,
-                                        Duration TIMESTAMP)'''
+    CREATE TABLE IF NOT EXISTS videos ( Channel_Name varchar(100),
+                                        Channel_Id varchar(100),
+                                        Video_Id varchar(30),
+                                        Title varchar(150),
+                                        Tags text,
+                                        Thumbnail varchar(200),
+                                        Description text,
+                                        Published_Date timestamp,
+                                        Duration interval,
+                                        Views bigint,
+                                        Comments int, 
+                                        likes bigint,
+                                        Favorite_Count int,
+                                        Definition varchar(10),
+                                        Caption_Status varchar(50) )'''
     cursor.execute(create_query)
     mydb.commit()
 
@@ -441,35 +362,44 @@ def videos_table():
     coll1 = db["channel_details"]
     for vi_data in coll1.find({}, {"_id": 0, "video_information": 1}):
         for video_info in vi_data["video_information"]:
-            vi_list.append(video_info)
+            vi_list.append(vi_data["video_information"])
+    df = pd.DataFrame(vi_list)
 
-    for video in vi_list:
+    for index,row in df.iterrows():
         insert_query = '''INSERT INTO videos( Channel_Name,
                                               Channel_Id,
                                               Video_Id,
                                               Title,
+                                              Tags,
                                               Thumbnail,
-                                              Video_Description,                                                    
+                                              Description,
+                                              Published_Date,
+                                              Duration,
                                               Views,
-                                              Likes,            
+                                              Comments, 
+                                              likes,
                                               Favorite_Count,
-                                              Comments,
-                                              Duration)
-        VALUES (%s, %s, %s, %s, %s, %s,%s, %s, %s, %s, %s)
+                                              Definition,
+                                              Caption_Status)
+        VALUES (%s, %s, %s, %s, %s, %s,%s, %s, %s, %s, %s,%s, %s, %s, %s)
         '''
 
-        values = ( video['Channel_Name'],
-                   video['Channel_Id'],
-                   video['Video_Id'],
-                   video['Title'],
-                   video.get('Thumbnail', ''),
-                   video.get('Video_Description', ''),                         
-                   video['Views'],
-                    int(video.get('Likes', 0)),
-                  int(video.get('Favorite_Count', 0)),
-                   video['Comments'],
-                   video.get('Duration', '')
-                  )
+        values = (row["Channel_Name"],
+                  row["Channel_Id"],
+                  row["Video_Id"],
+                  row["Title"],
+                  row["Tags"],
+                  row["Thumbnail"],
+                  row["Description"],
+                  row["Published_Date"],
+                  row["Duration"],
+                  row["Views"],
+                  row["Comments"],
+                  row["likes"],
+                  row["Favorite_Count"],
+                  row["Definition"],
+                  row["Caption_Status"])
+                  
 
         try:
             cursor.execute(insert_query, values)

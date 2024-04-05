@@ -454,14 +454,19 @@ def comment_table():
     df3 = pd.DataFrame(com_list)
 
     for index, row in df3.iterrows():
-        insert_query = '''INSERT INTO comments (Comment_Id, Video_Id, Comment_Text, Comment_Author, Comment_Published)
-                          VALUES (%s, %s, %s, %s, %s)'''
+        insert_query = '''INSERT INTO comments (Comment_Id,
+                                                Video_Id, 
+                                                Comment_Text, 
+                                                Comment_Author, 
+                                                Comment_Published)
+                                                VALUES (%s, %s, %s, %s, %s)
+                                                ON CONFLICT (Comment_Id) DO NOTHING'''
         
-        values = (row.get('Comment_Id', ''),
-                  row.get('Video_Id', ''),
-                  row.get('Comment_Text', ''),
-                  row.get('Comment_Author', ''),
-                  row.get('Comment_Published', '')
+        values = (row['Comment_Id'],
+                  row['Video_Id'],
+                  row.get('Comment_Text'),
+                  row.get('Comment_Author'),
+                  row.get('Comment_Published')
                   )
         try:
             cursor.execute(insert_query, values)

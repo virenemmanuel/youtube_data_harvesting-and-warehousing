@@ -111,17 +111,17 @@ def get_video_info(Video_ids):
                 
                 
         # function to convert duration
-        def convert_duration(Duration):
-            regex = r'PT(\d+H)?(\d+M)?(\d+S)?'
-            match = re.match(regex, Duration)
-            if not match:
-                return '00:00:00'
-            hours, minutes, seconds = match.groups()
-            hours = int(hours[:-1]) if hours else 0
-            minutes = int(minutes[:-1]) if minutes else 0
-            seconds = int(seconds[:-1]) if seconds else 0
-            total_seconds = hours * 3600 + minutes * 60 + seconds
-            return '{:02d}:{:02d}:{:02d}'.format(int(total_seconds / 3600), int((total_seconds % 3600) / 60), int(total_seconds % 60))
+        # def convert_duration(Duration):
+        #     regex = r'PT(\d+H)?(\d+M)?(\d+S)?'
+        #     match = re.match(regex, Duration)
+        #     if not match:
+        #         return '00:00:00'
+        #     hours, minutes, seconds = match.groups()
+        #     hours = int(hours[:-1]) if hours else 0
+        #     minutes = int(minutes[:-1]) if minutes else 0
+        #     seconds = int(seconds[:-1]) if seconds else 0
+        #     total_seconds = hours * 3600 + minutes * 60 + seconds
+        #     return '{:02d}:{:02d}:{:02d}'.format(int(total_seconds / 3600), int((total_seconds % 3600) / 60), int(total_seconds % 60))
                                 
         video_data.append(data)
         return video_data
@@ -610,34 +610,38 @@ question = st.selectbox('Please Select your Question',( '1. What are the names o
 
 
 if question == '1. What are the names of all the videos and their corresponding channels':
-    query1 = '''SELECT title AS Videos , channel_Name AS 'ChannelName' FROM videos;'''
+    query1 = '''SELECT title AS videos,channel_Name AS channelname from videos;'''
     cursor.execute(query1)
     mydb.commit()
     t1 = cursor.fetchall()
-    st.write(pd.DataFrame(t1, columns=["Videos", "ChannelName"]))
+    df1= pd.DataFrame(t1,columns=["video title", "channel name"])
+    st.write(df1)
 
 
-elif question == '2. Which channels have the most number of videos, and how many videos do they have?':
-    query2 = "select Channel_Name as ChannelName,Total_Videos as NO_Videos from channels order by Total_Videos desc;"
+elif question == '2. Which channels have the most number of videos,and how many videos do they have?':
+    query2 = "select channel_name as channelname,total_videos as no_videos from channels order by total_videos desc;"
     cursor.execute(query2)
     mydb.commit()
     t2=cursor.fetchall()
-    st.write(pd.DataFrame(t2, columns=["Channel Name","No Of Videos"]))
+    df2 = pd.DataFrame(t2, columns=["Channel Name","No Of Videos"])
+    st.write(df2)
 
 elif question == '3.  What are the top 10 most viewed videos and their respective channels?':
-    query3 = '''select Views as views , Channel_Name as ChannelName,Title as VideoTitle from videos 
-                        where Views is not null order by Views desc limit 10;'''
+    query3 = '''select views as views , channel_name as channelname,title as videoTitle from videos 
+                        where views is not null order by Views desc limit 10;'''
     cursor.execute(query3)
     mydb.commit()
     t3 = cursor.fetchall()
-    st.write(pd.DataFrame(t3, columns = ["views","channel Name","video title"]))
+    df3 = pd.DataFrame(t3, columns = ["views","channel Name","video title"])
+    st.write(df3)
 
 elif question == '4. How many comments were made on each video, and what are their corresponding video names?':
     query4 = "select Comments as No_comments ,Title as VideoTitle from videos where Comments is not null;"
     cursor.execute(query4)
     mydb.commit()
     t4=cursor.fetchall()
-    st.write(pd.DataFrame(t4, columns=["No Of Comments", "Video Title"]))
+    df4 = pd.DataFrame(t4, columns=["No Of Comments", "Video Title"])
+    st.write(df4)
 
 elif question == '5. Which videos have the highest number of likes, and what are theircorresponding channel names?':
     query5 = '''select Title as VideoTitle, Channel_Name as ChannelName, Likes as LikesCount from videos 
@@ -645,14 +649,16 @@ elif question == '5. Which videos have the highest number of likes, and what are
     cursor.execute(query5)
     mydb.commit()
     t5 = cursor.fetchall()
-    st.write(pd.DataFrame(t5, columns=["video Title","channel Name","like count"]))
+    df5=pd.DataFrame(t5, columns=["video Title","channel Name","like count"])
+    st.write(df5)
 
 elif question == '6. What is the total number of likes and dislikes for each video, and what aretheir corresponding video names?':
     query6 = '''select Likes as likeCount,Title as VideoTitle from videos;'''
     cursor.execute(query6)
     mydb.commit()
     t6 = cursor.fetchall()
-    st.write(pd.DataFrame(t6, columns=["like count","video title"]))
+    df6=pd.DataFrame(t6, columns=["like count","video title"])
+    st.write(df6)
 
 elif question == '7.  What is the total number of views for each channel, and what are their corresponding channel names?':
     query7 = "select Channel_Name as ChannelName, Views as Channelviews from channels;"
@@ -667,21 +673,25 @@ elif question == '8. What are the names of all the channels that have published 
     cursor.execute(query8)
     mydb.commit()
     t8=cursor.fetchall()
-    st.write(pd.DataFrame(t8,columns=["Name", "Video Publised On", "ChannelName"]))
+    df8=pd.DataFrame(t8,columns=["Name", "Video Publised On", "ChannelName"])
+    st.write(df8)
 
-elif question == '9.  What is the average duration of all videos in each channel, and what are their corresponding channel names?':
-    query9 =  "SELECT Channel_Name as ChannelName, AVG(Duration) AS average_duration FROM videos GROUP BY Channel_Name;"
+elif question == '9. What is the average duration of all videos in each channel, and what are their corresponding channel names?':
+    query9 =  "SELECT Channel_Name as channelname, AVG(Duration) AS average_duration FROM videos GROUP BY Channel_Name;"
     cursor.execute(query9)
     mydb.commit()
     t9=cursor.fetchall()
-    t9 = pd.DataFrame(t9, columns=['ChannelTitle', 'Average Duration'])
-    T9=[]
-    for index, row in t9.iterrows():
-        channel_title = row['ChannelTitle']
-        average_duration = row['Average Duration']
-        average_duration_str = str(average_duration)
-        T9.append({"Channel Title": channel_title ,  "Average Duration": average_duration_str})
-    st.write(pd.DataFrame(T9))
+    df9 = pd.DataFrame(t9, columns=['channel name', 'average_duration'])
+    df9
+
+    T9 = []
+    for index,row in df9.iterrows():
+        channel_title=row["channel name"]
+        average_duration=row["average_duration"]
+        average_duration_str=str(average_duration)
+        T9.append(dict(channeltitle=channel_title,averageduration=average_duration_str))
+    df1=pd.DataFrame(T9)
+    st.write(df1)
 
 elif question == '10.  Which videos have the highest number of comments, and what are their corresponding channel names?':
     query10 = '''select Title as VideoTitle, Channel_Name as ChannelName, Comments as Comments from videos 
@@ -689,7 +699,8 @@ elif question == '10.  Which videos have the highest number of comments, and wha
     cursor.execute(query10)
     mydb.commit()
     t10=cursor.fetchall()
-    st.write(pd.DataFrame(t10, columns=['Video Title', 'Channel Name', 'NO Of Comments']))
+    df10=pd.DataFrame(t10, columns=['Video Title', 'Channel Name', 'NO Of Comments'])
+    st.write(df10)
 
 
 cursor.close()

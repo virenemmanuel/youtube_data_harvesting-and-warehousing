@@ -610,12 +610,13 @@ question = st.selectbox('Please Select your Question',( '1. What are the names o
 
 
 if question == '1. What are the names of all the videos and their corresponding channels':
-    query1 = '''SELECT title AS videos,channel_Name AS channelname from videos;'''
+    query1 = '''SELECT title AS videos,channel_name AS channelname from videos;'''
     cursor.execute(query1)
     mydb.commit()
     t1 = cursor.fetchall()
-    df1= pd.DataFrame(t1,columns=["video title", "channel name"])
+    df1= pd.DataFrame(t1,columns=["videos","channelname"])
     st.write(df1)
+    df1
 
 
 elif question == '2. Which channels have the most number of videos,and how many videos do they have?':
@@ -628,7 +629,7 @@ elif question == '2. Which channels have the most number of videos,and how many 
 
 elif question == '3.  What are the top 10 most viewed videos and their respective channels?':
     query3 = '''select views as views , channel_name as channelname,title as videoTitle from videos 
-                        where views is not null order by Views desc limit 10;'''
+                        where views is not null order by views desc limit 10;'''
     cursor.execute(query3)
     mydb.commit()
     t3 = cursor.fetchall()
